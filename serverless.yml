@@ -1,0 +1,44 @@
+
+service: stacksets
+
+
+plugins:
+- serverless-python-requirements
+- serverless-deployment-bucket
+
+
+provider:
+  variableSyntax: "\\${{([ ~:a-zA-Z0-9._@\\'\",\\-\\/\\(\\)]+?)}}"
+  name: aws
+  runtime: python3.8
+  region: ${{opt:region, 'us-east-1'}}
+  stage: ${{self:custom.stage}}
+  cfnRole: arn:aws:iam::${{self:custom.config.${{self:provider.stage}}.aws_account_id}}:role/GBMAWSCloudFormationExecutionRole
+  role: arn:aws:iam::${{self:custom.config.${{self:provider.stage}}.aws_account_id}}:role/GBMAWSLambdaStackSetExecutionRole
+  deploymentBucket:
+    name: gbm-stacksets-artifactsbucket-${{self:provider.stage}}
+    serverSideEncryption: aws:kms
+  memorySize: 128
+  timeout: 900
+  versionFunctions: false
+  tags:
+    ManagedBy: Serverless
+
+
+custom:
+  pythonRequirements:
+    usePipenv: false
+    fileName: customhandler/requirements.txt
+    noDeploy:
+    - boto3
+  stage: ${{opt:env, 'prd'}}
+  template_folder: ${{opt:templatefolder, ''}}
+  function_deployment_bucket: gbm-stacksets-deployment-bucket-${{self:custom.stage}}
+  config:
+    dev:
+      aws_account_id: 872815490806 # sre-dev
+    stg:
+      aws_account_id: 953830659514 # sre-stg
+
+resources:
+- ${{file(demo_s3.yaml)}}

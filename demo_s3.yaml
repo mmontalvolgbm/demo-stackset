@@ -1,0 +1,38 @@
+---
+
+
+Resources:
+  SecurityhubS3StackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      StackSetName: GBMSecurityHubStackset
+      AdministrationRoleARN: arn:aws:iam::${{self:custom.config.${{self:provider.stage}}.aws_account_id}}:role/GBMAWSCloudFormationStackSetAdministrationRole
+      Capabilities:
+        - CAPABILITY_IAM
+      Description: Shared info for aws config
+      ExecutionRoleName: GBMAWSCloudFormationStackSetExecutionRole
+      OperationPreferences:
+        RegionOrder: [ us-east-1 ]
+        FailureToleranceCount: 0
+        MaxConcurrentCount: 80
+      PermissionModel: SELF_MANAGED
+      TemplateBody: |
+        Resources:
+          SecurityHubBucket:
+            Type: AWS::S3::Bucket
+            Properties:
+              BucketName:
+                Fn::Sub: gbm-securityhub-artifactsbucket-${AWS::AccountId}
+              AccessControl: BucketOwnerFullControl
+              BucketEncryption:
+                ServerSideEncryptionConfiguration:
+                - ServerSideEncryptionByDefault:
+                    SSEAlgorithm: AES256
+
+      StackInstancesGroup:
+      - Regions:
+        - us-east-1
+        DeploymentTargets:
+          Accounts:
+          - "872815490806"
+          - "953830659514"
